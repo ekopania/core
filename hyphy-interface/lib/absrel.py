@@ -224,9 +224,9 @@ def generate(indir, tree_input, gt_opt, aln_id_delim, target_clades, hyphy_path,
 def parse(indir, features, outfile, pad):
 
     if features:
-        headers = ["file","id","chr","start","end","num ps branches", "ps pvals"];
+        headers = ["file","id","chr","start","end","num ps branches", "ps pvals", "num foreground branches"];
     else:
-        headers = ["file","branches","num ps branches","ps pvals"];
+        headers = ["file","branches","num ps branches","ps pvals","num foreground branches"];
     outfile.write(",".join(headers) + "\n");
     # Write the output headers 
 
@@ -276,9 +276,9 @@ def parse(indir, features, outfile, pad):
 
         if features:
             gene_info = { 'id' : fid, 'chr' : cur_feature['chrome'], 'start' : cur_feature['start'], 'end' : cur_feature['end'],
-                "num ps branches" : 0, "ps pvals" : [] };
+                "num ps branches" : 0, "ps pvals" : [], "num foreground branches" : 0 };
         else:
-            gene_info = { "branches" : [], "num ps branches" : 0, "ps pvals" : [] };   
+            gene_info = { "branches" : [], "num ps branches" : 0, "ps pvals" : [], "num foreground branches" : 0 };   
         # Initialize the output dictionary for the current branch.
 
         #gene_info["dn/ds"] = str(cur_data["fits"]["Standard MG94"]["Rate Distributions"]["non-synonymous/synonymous rate ratio"]);
@@ -287,11 +287,13 @@ def parse(indir, features, outfile, pad):
                 gene_info["branches"].append(str(node)); 
                 gene_info["num ps branches"] += 1;
                 gene_info["ps pvals"].append(str(cur_data["branch attributes"]["0"][node]["Corrected P-value"]));
+                gene_info["num foreground branches"] = cur_data["test results"]["tested"];
         # Retrieve the rate estimates from the json data.
 
         gene_info["branches"] = ";".join(gene_info["branches"]);
         gene_info["ps pvals"] = ";".join(gene_info["ps pvals"]);
         gene_info["num ps branches"] = str(gene_info["num ps branches"]);
+        gene_info["num foreground branches"] = str(gene_info["num foreground branches"]);
         gene_outline = [f] + [ gene_info[h] for h in headers if h not in ["file"] ];
         outfile.write(",".join(gene_outline) + "\n");
         # Ouput rate estimates for both the gene.

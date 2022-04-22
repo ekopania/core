@@ -3,7 +3,7 @@
 # Generates commands and shell scripts for various PAML models
 ############################################################
 
-import sys, os, re, argparse, lib.pamlcore as pcore
+import sys, os, re, argparse, csv, lib.pamlcore as pcore
 
 ############################################################
 # Options
@@ -20,7 +20,7 @@ parser.add_argument("--outname", dest="outname", help="Use the end of the output
 
 parser.add_argument("-tree", dest="tree", help="The species tree to use.", default=False);
 parser.add_argument("-genetrees", dest="genetrees", help="A directory containing gene trees for each locus (from iqtree_gt_gen.py).", default=False);
-parser.add_argument("-targetclade", dest="target_clade", help="For clade model C (-m cmc) and Model 2 (-m m2): A comma delimited list of species that make up the clade descending from the target branch. Only alignments and gene trees with the target clade will be used.", default=False);
+parser.add_argument("-targetclade", dest="target_clade", help="For clade model C (-m cmc), branch-site test (-m bs), and Model 2 (-m m2): A comma delimited list of species that make up the clade descending from the target branch. Only alignments and gene trees with the target clade will be used.", default=False);
 parser.add_argument("--anc", dest="anc_recon", help="Set to also have codeml perform ancestral sequence reconstruction.", action="store_true", default=False);
 # Program options
 
@@ -39,13 +39,19 @@ args.input = os.path.abspath(args.input);
 if args.model not in ["m1", "m1a", "m2", "m2a", "m7m8", "cmc", "bs"]:
     sys.exit(" * Error 2: Model (-m) must be one of: m1, m1a, m2, m2a, m7m8, cmc, bs");
 
-if args.model in ["m2", "cmc"]:
+if args.model in ["m2", "cmc", "bs"]:
     if not args.target_clade:
-        sys.exit(" * Error 3: With models m2 and cmc a -targetclade must be given.");
+        sys.exit(" * Error 3: With models m2, bs, and cmc a -targetclade must be given.");
 
-    targets = args.target_clade.replace(", ", ",").split(",");
-    targets = set(targets);
-# Parse the targets for CMC.
+    with open(args.target_clade, "r") as target_file:
+        myread=csv.reader(target_file, skipinitialspace=True)
+        for row in myread:
+            targets=set(row)
+    # Parse targets from csv file
+    #targets = args.target_clade.replace(", ", ",").split(",");
+    #targets = set(targets);
+    #Parse targets from comma separated list
+# Parse the targets for CMC, branch-site, and m2
 
 if not args.name:
     name = pcore.getRandStr();
@@ -125,7 +131,7 @@ with open(output_file, "w") as outfile:
         pcore.PWS(pcore.spacedOut("# Using single species tree:", pad) + tree_input, outfile);
     elif args.genetrees:
         pcore.PWS(pcore.spacedOut("# Using gene trees:", pad) + tree_input, outfile);
-    if args.model in ["m2", "cmc"]:
+    if args.model in ["m2", "cmc", "bs"]:
         pcore.PWS(pcore.spacedOut("# Target clade:", pad) + ",".join(targets), outfile);
     if args.anc_recon:
         pcore.PWS(pcore.spacedOut("# Performing ancestral sequence reconstruction.", pad), outfile);
@@ -165,7 +171,7 @@ with open(output_file, "w") as outfile:
 
     if args.model == "bs":
         import lib.bs as bs;
-        bs.generate(args.input, tree_input, args.genetrees, args.path, args.output, outfile);
+        bs.generate(args.input, tree_input, args.genetrees, targets, args.path, args.output, outfile);
 
 ##########################
 # Generating the submit script.

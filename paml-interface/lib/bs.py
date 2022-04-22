@@ -68,7 +68,7 @@ def assignTargetClade(tree_str, targs):
 
 ############################################################
 
-def generate(indir, tree_input, gt_opt, paml_path, outdir, outfile):
+def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
     ctlfile_template = template();
 
     aligns = { os.path.splitext(f)[0] : { "aln-file" : os.path.join(indir, f), "tree" : False } for f in os.listdir(indir) if f.endswith(".fa") };
@@ -96,12 +96,14 @@ def generate(indir, tree_input, gt_opt, paml_path, outdir, outfile):
             continue;
         # Check the tree file.          
 
-        #target_found, cur_tree = assignTargetClade(aligns[aln]['tree'], targets);
-        #if not target_found:
-        #    outfile.write(" # Target clade not found. Skipping: " + aligns[aln]['aln-file'] + "\n");
-        #    target_skipped += 1;
-        #    continue;
+        target_found, cur_tree = assignTargetClade(aligns[aln]['tree'], targets);
+        if not target_found:
+            outfile.write(" # Target clade not found. Skipping: " + aligns[aln]['aln-file'] + "\n");
+            target_skipped += 1;
+            continue;
         # Assign the target lineages to the current tree.
+        #cur_tree = aligns[aln]['tree']
+        # Doing this without target clades for now; still need to assign cur_tree to the current tree
 
         seq_dict = pseq.fastaGetDict(aligns[aln]['aln-file']);
         prem_stop_flag = False

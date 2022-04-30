@@ -10,7 +10,7 @@ import sys, os, re, argparse, csv, lib.pamlcore as pcore
 
 parser = argparse.ArgumentParser(description="codeml command generator");
 parser.add_argument("-i", dest="input", help="Directory of input FASTA alignments .", default=False);
-parser.add_argument("-m", dest="model", help="The PAML model that was used to generate the files in -i. Options: m1, m1a, m2, m2a, m7m8, cmc, bs. Default: m1", default="m1");
+parser.add_argument("-m", dest="model", help="The PAML model that was used to generate the files in -i. Options: m1, m1a, m2, m2a, m7m8, cmc, bs, bs_null. Default: m1", default="m1");
 parser.add_argument("-o", dest="output", help="Desired output directory for aligned files. Job name (-n) will be appended to output directory name.", default=False);
 parser.add_argument("-n", dest="name", help="A short name for all files associated with this job.", default=False);
 parser.add_argument("-p", dest="path", help="The path to codeml. Default: codeml", default="codeml");
@@ -20,7 +20,7 @@ parser.add_argument("--outname", dest="outname", help="Use the end of the output
 
 parser.add_argument("-tree", dest="tree", help="The species tree to use.", default=False);
 parser.add_argument("-genetrees", dest="genetrees", help="A directory containing gene trees for each locus (from iqtree_gt_gen.py).", default=False);
-parser.add_argument("-targetclade", dest="target_clade", help="For clade model C (-m cmc), branch-site test (-m bs), and Model 2 (-m m2): A comma delimited list of species that make up the clade descending from the target branch. Only alignments and gene trees with the target clade will be used.", default=False);
+parser.add_argument("-targetclade", dest="target_clade", help="For clade model C (-m cmc), branch-site test (-m bs and -m bs_null), and Model 2 (-m m2): A comma delimited list of species that make up the clade descending from the target branch. Only alignments and gene trees with the target clade will be used.", default=False);
 parser.add_argument("--anc", dest="anc_recon", help="Set to also have codeml perform ancestral sequence reconstruction.", action="store_true", default=False);
 # Program options
 
@@ -36,12 +36,12 @@ if not args.input or not os.path.isdir(args.input):
     sys.exit( " * Error 1: An input directory must be defined with -i.");
 args.input = os.path.abspath(args.input);
 
-if args.model not in ["m1", "m1a", "m2", "m2a", "m7m8", "cmc", "bs"]:
-    sys.exit(" * Error 2: Model (-m) must be one of: m1, m1a, m2, m2a, m7m8, cmc, bs");
+if args.model not in ["m1", "m1a", "m2", "m2a", "m7m8", "cmc", "bs", "bs_null"]:
+    sys.exit(" * Error 2: Model (-m) must be one of: m1, m1a, m2, m2a, m7m8, cmc, bs, bs_null");
 
-if args.model in ["m2", "cmc", "bs"]:
+if args.model in ["m2", "cmc", "bs", "bs_null"]:
     if not args.target_clade:
-        sys.exit(" * Error 3: With models m2, bs, and cmc a -targetclade must be given.");
+        sys.exit(" * Error 3: With models m2, bs, bs_null, and cmc a -targetclade must be given.");
 
     with open(args.target_clade, "r") as target_file:
         myread=csv.reader(target_file, skipinitialspace=True)
@@ -131,7 +131,7 @@ with open(output_file, "w") as outfile:
         pcore.PWS(pcore.spacedOut("# Using single species tree:", pad) + tree_input, outfile);
     elif args.genetrees:
         pcore.PWS(pcore.spacedOut("# Using gene trees:", pad) + tree_input, outfile);
-    if args.model in ["m2", "cmc", "bs"]:
+    if args.model in ["m2", "cmc", "bs", "bs_null"]:
         pcore.PWS(pcore.spacedOut("# Target clade:", pad) + ",".join(targets), outfile);
     if args.anc_recon:
         pcore.PWS(pcore.spacedOut("# Performing ancestral sequence reconstruction.", pad), outfile);
@@ -172,6 +172,9 @@ with open(output_file, "w") as outfile:
     if args.model == "bs":
         import lib.bs as bs;
         bs.generate(args.input, tree_input, args.genetrees, targets, args.path, args.output, outfile);
+    if args.model == "bs_null":
+        import lib.bs_null as bs_null;
+        bs_null.generate(args.input, tree_input, args.genetrees, targets, args.path, args.output, outfile);
 
 ##########################
 # Generating the submit script.

@@ -25,7 +25,7 @@ aaRatefile = codeml/dat/wag.dat
 icode = 0
 fix_kappa = 0
 kappa = 3
-fix_omega = 0
+fix_omega = 1
 omega = 1
 
 fix_alpha = 1
@@ -78,7 +78,7 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
         if gt_opt:
             #tree_file = os.path.join(tree_input, aln, aln + "-rooted.treefile");
             #tree_file = os.path.join(tree_input, aln, aln + ".treefile");
-            tree_file = os.path.join(tree_input, aln + ".pared.treefile");
+            tree_file = os.path.join(tree_input,aln + ".pared.treefile");
         else:
             tree_file = tree_input;
 
@@ -135,11 +135,8 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
         with open(new_seqfile, "w") as seqfile:
             for title in seq_dict:
                 tip_name = str(title).split(">")[1]
-                #print(tip_name)
                 split_tree = re.split(' |\(|,', cur_tree)
-                #print(split_tree)
                 if tip_name in split_tree:
-                    #print("Writing to output alignment fasta")
                     seqfile.write(title + "\n");
                     seqfile.write(seq_dict[title] + "\n");
         # Write the sequences for this alignment

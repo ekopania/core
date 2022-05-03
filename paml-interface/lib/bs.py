@@ -136,7 +136,7 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
             for title in seq_dict:
                 tip_name = str(title).split(">")[1]
                 #print(tip_name)
-                split_tree = re.split(' |\(|,', cur_tree)
+                split_tree = re.split(' |\(|\)|,', cur_tree)
                 #print(split_tree)
                 if tip_name in split_tree:
                     #print("Writing to output alignment fasta")

@@ -135,7 +135,7 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
         with open(new_seqfile, "w") as seqfile:
             for title in seq_dict:
                 tip_name = str(title).split(">")[1]
-                split_tree = re.split(' |\(|,', cur_tree)
+                split_tree = re.split(' |\(|\)|,', cur_tree)
                 if tip_name in split_tree:
                     seqfile.write(title + "\n");
                     seqfile.write(seq_dict[title] + "\n");

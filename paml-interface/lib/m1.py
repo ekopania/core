@@ -52,6 +52,8 @@ def generate(indir, tree_input, gt_opt, recon_setting, paml_path, outdir, outfil
     for aln in aligns:
         if gt_opt:
             tree_file = os.path.join(tree_input, aln, aln + ".treefile");
+            if not os.path.exists(tree_file): #Allows for a couple different treefile formats
+                tree_file = os.path.join(tree_input, aln + ".pared.treefile");
         else:
             tree_file = tree_input;
 
@@ -98,10 +100,13 @@ def generate(indir, tree_input, gt_opt, recon_setting, paml_path, outdir, outfil
         new_seqfile = os.path.join(cur_outdir, "codeml.fa");
         with open(new_seqfile, "w") as seqfile:
             for title in seq_dict:
-                seqfile.write(title + "\n");
-                seqfile.write(seq_dict[title] + "\n");
-        # Write the sequences for this alignment
-
+                tip_name = str(title).split(">")[1]
+                split_tree = re.split(' |\(|\)|,', cur_tree)
+                if tip_name in split_tree:
+                    seqfile.write(title + "\n");
+                    seqfile.write(seq_dict[title] + "\n");
+        # Write the sequences for this alignment; only include sequences present in tree
+        
         cur_ctlfile = os.path.join(cur_outdir, "codeml.ctl");
         cur_outfile = os.path.join(cur_outdir, "codeml.out");
         #cur_logfile = os.path.join(cur_outdir, base_input + "-codeml.log");

@@ -101,11 +101,8 @@ def generate(indir, tree_input, gt_opt, recon_setting, paml_path, outdir, outfil
         with open(new_seqfile, "w") as seqfile:
             for title in seq_dict:
                 tip_name = str(title).split(">")[1];
-                print(tip_name);
-                split_tree = re.split(' |\(|\)|,|:', cur_tree);
-                print(split_tree);
+                split_tree = re.split(' |\(|\)|,|:', aligns[aln]['tree']);
                 if tip_name in split_tree:
-                    print("Writing to output fasta");
                     seqfile.write(title + "\n");
                     seqfile.write(seq_dict[title] + "\n");
         # Write the sequences for this alignment; only include sequences present in tree

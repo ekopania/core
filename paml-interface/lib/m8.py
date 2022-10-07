@@ -1,6 +1,7 @@
 ############################################################
-# Functions for the free-ratio (M1) model from codeml.
-# 11.2020
+# Functions for the beta+omega (M8) models from codeml.
+# Running as a site model testing for positive selection (model = 0, compare M8a and M8 with LRT)
+# 05.2022 - EK modifying Gregg's M1 script
 ############################################################
 
 import sys, os, re, lib.pamlcore as pcore, lib.pamlseq as pseq, lib.pamltree as ptree
@@ -12,8 +13,8 @@ def template():
 treefile = {treefile}
 outfile = {outfile}
 
-model = 2
-NSsites = 0
+model = 0
+NSsites = 0 8
 
 seqtype = 1
 CodonFreq = 2
@@ -34,40 +35,19 @@ ncatG = 10
 getSE = 0
 Small_Diff = .5e-3
 
+RateAncestor = {recon}
+
 noisy = 3
 verbose = 0
 '''
     return(ctlfile_template);
 
-############################################################
-
-def assignTargetClade(tree_str, targs):
-# Function that reads a tree into a dictionary and determines the target branch from a set of tip labels
-
-    tinfo, t, root = ptree.treeParse(tree_str);
-    # Parse tree into dictionary
-
-    target_found, repl_nodes = False, [];
-    for n in tinfo:
-        cur_clade = ptree.getClade(n, tinfo);
-        # Get the clade that defines each node
-
-        if all(c_nodes in targs for c_nodes in cur_clade):
-            repl_nodes.append(n);
-            target_found = True;
-        # If the clade matches the specified targets, set as a target branch
-
-    if target_found:
-        for n in repl_nodes:
-            t = t.replace(n, n + " #1");
-        t = re.sub('<[\d]+>', '', t) + ";";
-    # Add target labels and remove node labels
-
-    return target_found, t;
+#Also running model 0 to estimate dN/dS
+#Changing small diff to .5e-3 instead of default .5e-6 to make it run faster
 
 ############################################################
 
-def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
+def generate(indir, tree_input, gt_opt, recon_setting, paml_path, outdir, outfile):
     ctlfile_template = template();
 
     aligns = { os.path.splitext(f)[0] : { "aln-file" : os.path.join(indir, f), "tree" : False } for f in os.listdir(indir) if f.endswith(".fa") };
@@ -75,7 +55,7 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
 
     for aln in aligns:
         if gt_opt:
-            tree_file = os.path.join(tree_input, aln, aln + "-rooted.treefile");
+            tree_file = os.path.join(tree_input, aln, aln + ".treefile");
             if not os.path.exists(tree_file): #Allows for a couple different treefile formats
                 tree_file = os.path.join(tree_input, aln + ".pared.treefile");
         else:
@@ -85,23 +65,16 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
             cur_tree = open(tree_file, "r").read().strip();
             cur_tree = re.sub("\)[\de.-]+:", "):", cur_tree);
             aligns[aln]['tree'] = cur_tree;
-        # Read the tree and remove any bootstrap node labels.
+        # Read the tree and remove any bootstrap node labels.1
     # Read the appropriate tree depending on the -tree and -genetree options.
 
-    tree_skipped, target_skipped, stop_skipped = 0, 0, 0;
+    tree_skipped, stop_skipped = 0, 0;
     for aln in aligns:
         if not aligns[aln]['tree']:
             outfile.write(" # Tree file not found. Skipping: " + aln + "\n");
             tree_skipped += 1;
             continue;
         # Check the tree file.          
-
-        target_found, cur_tree = assignTargetClade(aligns[aln]['tree'], targets);
-        if not target_found:
-            outfile.write(" # Target clade not found. Skipping: " + aligns[aln]['aln-file'] + "\n");
-            target_skipped += 1;
-            continue;
-        # Assign the target lineages to the current tree.
 
         seq_dict = pseq.fastaGetDict(aligns[aln]['aln-file']);
         prem_stop_flag = False
@@ -125,7 +98,7 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
 
         new_treefile = os.path.join(cur_outdir, "codeml.tre");
         with open(new_treefile, "w") as treefile:
-            treefile.write(cur_tree);
+            treefile.write(aligns[aln]['tree']);
         # Make the tree file for this alignment
 
         new_seqfile = os.path.join(cur_outdir, "codeml.fa");
@@ -144,7 +117,7 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
         # Get the control and output file names
 
         with open(cur_ctlfile, "w") as ctlfile:
-            ctlfile.write(ctlfile_template.format(infile=new_seqfile, treefile=new_treefile, outfile=cur_outfile));
+            ctlfile.write(ctlfile_template.format(infile=new_seqfile, treefile=new_treefile, outfile=cur_outfile, recon=recon_setting));
         # Write the control file
 
         codeml_cmd = "cd " + cur_outdir + "; " + paml_path + " codeml.ctl";
@@ -152,7 +125,6 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
         # Construct and write the codeml command
 
     pcore.PWS("# Num skipped because tree file not found     : " + str(tree_skipped), outfile);
-    pcore.PWS("# Num skipped because target clade not found  : " + str(target_skipped), outfile);
     pcore.PWS("# Num skipped because of premature stop codons: " + str(stop_skipped), outfile);
 
 ############################################################

@@ -3,7 +3,8 @@
 # 11.2020
 ############################################################
 
-import re
+import re, sys
+sys.setrecursionlimit(2000) #For recursive functions on large trees
 
 ############################################################
 
@@ -28,7 +29,13 @@ def getClade(c_spec, c_treedict):
 # This is done by getting the direct descendants of the current node with getDesc and then
 # recursively calling itself on those descendants.
 	clade = [];
+	#print(c_treedict);
+	#Need to get rid of "{TEST}" label from internal node names, otherwise it won't be in the dictionary
+	if "<" in c_spec and "{TEST}" in c_spec:
+		print("TEST in c_spec: ", c_spec);
+		c_spec = re.sub("{TEST}","",c_spec);
 	c_desc = getDesc(c_spec, c_treedict);
+	#print(len(c_desc));
 	for d in c_desc:
 		if c_treedict[d][2] != 'tip':
 			clade.append(getClade(d, c_treedict));
@@ -50,8 +57,10 @@ def getClade(c_spec, c_treedict):
 def remBranchLength(treestring):
 # Removes branch lengths from a tree.
 
-	treestring = re.sub('[)][\d\w<>/.eE_:-]+', ')', treestring);
-	treestring = re.sub(':[\d.eE-]+', '', treestring);
+	#treestring = re.sub('[)][\d\w<>/.eE_:-]+', ')', treestring);
+	#treestring = re.sub(':[\d.eE-]+', '', treestring);
+	treestring = re.sub('[)][\d\w.:]+', ')', treestring);
+	treestring = re.sub(':[\d.]+', '', treestring);
 	#treestring = re.sub('[)][_\d\w<>.eE-]+:[\d.eE-]+', ')', treestring);
 	#treestring = re.sub(':[\d.eE-]+', '', treestring);
 	#treestring = re.sub('<[\d\w]+>[\d_]+', '', treestring);
@@ -76,13 +85,17 @@ def treeParse(tree, debug=0):
 	nodes, bl, supports, ancs = {}, {}, {}, {};
 	# Initialization of all the tracker dicts
 
+	#if debug == 1:
+	#	print("BEFORE removing branch lengths: ", tree);
+
 	topology = remBranchLength(tree);
 
 	if debug == 1:
 		print("TOPOLOGY:", topology);
 
 	nodes = {};
-	for n in topology.replace("(","").replace(")","").replace(";","").split(","):
+	#for n in topology.replace("(","").replace(")","").replace(";","").split(","):
+	for n in topology.replace("){TEST}","").replace("){REFERENCE}","").replace("(","").replace(")","").replace(";","").split(","):
 		nodes[n] = 'tip';
 	# nodes = { n : 'tip' for n in topology.replace("(","").replace(")","").replace(";","").split(",") };
 	# Retrieval of the tip labels
@@ -131,11 +144,14 @@ def treeParse(tree, debug=0):
 	for node in nodes:
 		if node + node in new_tree:
 			new_tree = new_tree.replace(node + node, node);
+		if node + "{TEST}" in new_tree:
+			nodes[node + "{TEST}"] = nodes.pop(node);
+		if node + "{REFERENCE}" in new_tree:
+                        nodes[node + "{REFERENCE}"] = nodes.pop(node);
 
 	# if debug == 1:
 	# 	print new_tree;
 	# 	sys.exit();
-
 	for node in nodes:
 	# One loop through the nodes to retrieve all other info
 		if debug == 1:

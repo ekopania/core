@@ -3,7 +3,9 @@
 # Generates commands for the MAFFT alignment program
 ############################################################
 
-import sys, os, core, argparse
+import sys
+sys.path.append("/home/ek112884/software/core/corelib/")
+import os, core, argparse
 
 ############################################################
 # Options
@@ -134,7 +136,7 @@ with open(submit_file, "w") as sfile:
 #SBATCH --job-name={name}
 #SBATCH --output={name}-%j.out
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=gregg.thomas@umontana.edu
+#SBATCH --mail-user=ekopania4@gmail.com
 #SBATCH --partition={partition}
 #SBATCH --nodes={nodes}
 #SBATCH --ntasks={tasks}

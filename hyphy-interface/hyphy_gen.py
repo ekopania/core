@@ -10,11 +10,11 @@ import sys, os, re, argparse, lib.hpcore as hpcore, lib.hptree as hptree
 
 parser = argparse.ArgumentParser(description="codeml command generator");
 parser.add_argument("-i", dest="input", help="Directory of input FASTA alignments. Note: for -model anc-recon this should be a directory of Hyphy .json files.", default=False);
-parser.add_argument("-m", dest="model", help="The model to run. Options: mg94, mg94-local, rm-dup, fel, busted, fubar, absrel, anc-recon, slac, relax. Default: mg94", default="mg94");
+parser.add_argument("-m", dest="model", help="The model to run. Options: mg94, mg94-local, rm-dup, fel, busted, fubar, absrel, anc-recon, slac, relax, busted-ph. Default: mg94", default="mg94");
 parser.add_argument("-s", dest="sep", help="The character to split the alignment filename on to obtain the gene ID. Default: none, use whole file name.", default=False);
 parser.add_argument("-o", dest="output", help="Desired output directory for aligned files. Job name (-n) will be appended to output directory name.", default=False);
 parser.add_argument("-n", dest="name", help="A short name for all files associated with this job.", default=False);
-parser.add_argument("-p", dest="path", help="The path to codeml. Default: codeml", default="codeml");
+parser.add_argument("-p", dest="path", help="The path to hyphy. Default: hyphy", default="hyphy");
 parser.add_argument("--overwrite", dest="overwrite", help="If the output directory already exists and you wish to overwrite it, set this option.", action="store_true", default=False);
 parser.add_argument("--outname", dest="outname", help="Use the end of the output directory path as the job name.", action="store_true", default=False);
 # IO options
@@ -23,8 +23,8 @@ parser.add_argument("-tree", dest="tree", help="The species tree to use.", defau
 parser.add_argument("-genetrees", dest="genetrees", help="A directory containing gene trees for each locus (from iqtree_gt_gen.py).", default=False);
 parser.add_argument("-targetclades", dest="target_clades", help="A file or directory of files containing subtrees of target clades.", default=False);
 #parser.add_argument("-target", dest="target", help="A single or pair of species. The MRCA of the given species will be determined as the target lineage. Pairs should be separated by semi-colons and multiple targets separated by commas, e.g. 'targ1s1;targ1s2,targ2s1;targ2s2", default=False);
-parser.add_argument("-tb", dest="testbranches", help="A comma delimited list of species or branches that make up the test branches for RELAX.", default=False);
-parser.add_argument("-rb", dest="refbranches", help="A comma delimited list of species or branches that make up the reference branches for RELAX.", default=False);
+parser.add_argument("-tb", dest="testbranches", help="A comma delimited list of species or branches that make up the test branches for RELAX and BUSTED-PH.", default=False);
+parser.add_argument("-rb", dest="refbranches", help="A comma delimited list of species or branches that make up the reference branches for RELAX and BUSTED-PH.", default=False);
 # Program options
 
 parser.add_argument("-part", dest="part", help="SLURM partition option.", default=False);
@@ -41,8 +41,8 @@ if not args.input or not os.path.isdir(args.input):
     sys.exit( " * Error 1: An input directory must be defined with -i.");
 args.input = os.path.abspath(args.input);
 
-if args.model not in ["mg94", "mg94-local", "rm-dup", "fel", "busted", "fubar", "absrel", "anc-recon", "slac", "relax"]:
-    sys.exit(" * Error 2: Model (-m) must be one of: mg94, mg94-local, rm-dup, fel, busted, fubar, absrel, slac, relax");
+if args.model not in ["mg94", "mg94-local", "rm-dup", "fel", "busted", "fubar", "absrel", "anc-recon", "slac", "relax", "busted-ph"]:
+    sys.exit(" * Error 2: Model (-m) must be one of: mg94, mg94-local, rm-dup, fel, busted, fubar, absrel, slac, relax, busted-ph");
 
 if args.target_clades:
     targets = {};
@@ -58,16 +58,31 @@ else:
 # Parse the targets.
 
 if args.testbranches:
-    tests = args.testbranches.replace(", ", ",").split(",");
-    tests = list(set(tests));
+    tests = [];
+    with open(args.testbranches, 'r') as f:
+        lines = f.readlines();
+    for line in lines:
+        tests.append(line.replace("\n", "").replace(", ", ",").split(","));
+    #tests = list(set(tests));
+    if(len(tests) > 1):
+        sys.exit( " * Error: Test branches must be input as a text file with foreground species on ONE LINE, separated by commas.");
+    tests = tests[0];
     tests.sort();
 else:
     tests = False;
 # Parse the test branches.
+#print(tests);
 
 if args.refbranches:
-    refs = args.refbranches.replace(", ", ",").split(",");
-    refs = list(set(refs));
+    refs = [];
+    with open(args.refbranches, 'r') as f:
+        lines = f.readlines();
+    for line in lines:
+        refs.append(line.replace("\n", "").replace(", ", ",").split(","));
+    #refs = list(set(refs));
+    if(len(refs) > 1):
+        sys.exit( " * Error: Ref branches must be input as a text file with foreground species on ONE LINE, separated by commas.");
+    refs = refs[0];
     refs.sort();
 else:
     refs = False;
@@ -107,6 +122,13 @@ if args.model == "relax":
         sys.exit(" * Error 10: If running RELAX, -tb must be provided.");
     if not refs:
         sys.exit(" * Error 11: If running RELAX, -rb must be provided.");
+
+if args.model == "busted-ph":
+    if not tests:
+        sys.exit(" * Error 10: If running BUSTED-PH, -tb must be provided.");
+    if not refs:
+        sys.exit(" * Error 11: If running BUSTED-PH, -rb must be provided.");
+
 # error checking
 
 if not args.part:
@@ -226,7 +248,10 @@ with open(output_file, "w") as outfile:
         slac.generate(args.input, tree_input, args.genetrees, args.path, args.output, logdir, outfile);
     if args.model == "relax":
         import lib.relax as relax;
-        relax.generate(args.input, tree_input, tests, refs, args.genetrees, args.path, args.output, logdir, outfile)
+        relax.generate(args.input, tree_input, tests, refs, args.genetrees, args.path, args.output, logdir, outfile);
+    if args.model == "busted-ph":
+        import lib.busted_ph as busted_ph;
+        busted_ph.generate(args.input, tree_input, args.genetrees, args.sep, tests, refs, args.path, args.output, logdir, outfile);
 
 
 ##########################
@@ -237,15 +262,13 @@ with open(submit_file, "w") as sfile:
 #SBATCH --job-name={name}
 #SBATCH --output={name}-%j.out
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=gregg.thomas@umontana.edu
+#SBATCH --mail-user=ekopania4@gmail.com
 #SBATCH --partition={partition}
 #SBATCH --nodes={nodes}
 #SBATCH --ntasks={tasks}
 #SBATCH --tasks-per-node={tpn}
 #SBATCH --cpus-per-task={cpus}
 #SBATCH --mem={mem}
-
-conda activate hyphyenv
 
 parallel -j {tasks} < {output_file}'''
 

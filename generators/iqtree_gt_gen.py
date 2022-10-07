@@ -7,7 +7,10 @@
 # analysis.
 ############################################################
 
-import sys, os, core, argparse
+import sys
+sys.path.append("/home/ek112884/software/core/corelib/");
+# Add Gregg's corelib dir to the path.
+import os, core, argparse
 
 ############################################################
 # Options
@@ -15,7 +18,7 @@ import sys, os, core, argparse
 parser = argparse.ArgumentParser(description="iqtree command generator");
 parser.add_argument("-i", dest="input", help="Directory of input FASTA alignment files.", default=False);
 parser.add_argument("-o", dest="output", help="Desired output directory for aligned files. Job name (-n) will be appended to output directory name.", default=False);
-parser.add_argument("-b", dest="bootstrap", help="The number of bootstrap replicates to perform. Default: 0", default="0");
+parser.add_argument("-b", dest="bootstrap", help="The number of bootstrap replicates to perform. Default: 0", type=int, default="0");
 parser.add_argument("-n", dest="name", help="A short name for all files associated with this job.", default=False);
 parser.add_argument("-p", dest="path", help="The path to iqtree. Default: iqtree", default="iqtree");
 parser.add_argument("--overwrite", dest="overwrite", help="If the output directory already exists and you wish to overwrite it, set this option.", action="store_true", default=False);
@@ -66,8 +69,8 @@ elif args.tpn < 1:
     sys.exit( " * Error 8: -tpn must be a positive integer.");
 if args.cpus < 1:
     sys.exit( " * Error 9: -cpus must be a positive integer.");
-if args.mem < 1:
-    sys.exit( " * Error 10: -mem must be a positive integer.");
+if args.mem < 0:
+    sys.exit( " * Error 10: -mem must be a positive integer or zero.");
 # SLURM option error checking
 
 pad = 26
@@ -189,7 +192,7 @@ with open(loci_submit_file, "w") as sfile:
 #SBATCH --job-name={name}
 #SBATCH --output={name}-%j.out
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=gregg.thomas@umontana.edu
+#SBATCH --mail-user=ekopania4@gmail.com
 #SBATCH --partition={partition}
 #SBATCH --nodes={nodes}
 #SBATCH --ntasks={tasks}
@@ -211,7 +214,7 @@ with open(concat_submit_file, "w") as sfile:
 #SBATCH --job-name={name}
 #SBATCH --output={name}-%j.out
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=gregg.thomas@umontana.edu
+#SBATCH --mail-user=ekopania4@gmail.com
 #SBATCH --partition={partition}
 #SBATCH --nodes={nodes}
 #SBATCH --ntasks={tasks}

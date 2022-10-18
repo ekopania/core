@@ -32,7 +32,7 @@ def getClade(c_spec, c_treedict):
 	#print(c_treedict);
 	#Need to get rid of "{TEST}" label from internal node names, otherwise it won't be in the dictionary
 	if "<" in c_spec and "{TEST}" in c_spec:
-		print("TEST in c_spec: ", c_spec);
+		#print("TEST in c_spec: ", c_spec);
 		c_spec = re.sub("{TEST}","",c_spec);
 	c_desc = getDesc(c_spec, c_treedict);
 	#print(len(c_desc));
@@ -140,14 +140,28 @@ def treeParse(tree, debug=0):
 		print("TOPO:", topo);
 		print("----------");
 		print("TOPOLOGY:", topo);
+		print("NODES:", nodes);
 
+	replace = {};
 	for node in nodes:
+		print("#BEFORE APPEND: " + node);
 		if node + node in new_tree:
 			new_tree = new_tree.replace(node + node, node);
 		if node + "{TEST}" in new_tree:
-			nodes[node + "{TEST}"] = nodes.pop(node);
+			print("Adding TEST");
+			#nodes[node + "{TEST}"] = nodes.pop(node);
+			replace[node] = node + "{TEST}";
 		if node + "{REFERENCE}" in new_tree:
-                        nodes[node + "{REFERENCE}"] = nodes.pop(node);
+			print("Adding REF");
+			#nodes[node + "{REFERENCE}"] = nodes.pop(node);
+			replace[node] = node + "{REFERENCE}";
+	if debug == 1:
+		print("REPLACEMENT:", replace);
+	for k, v in list(nodes.items()):
+    		nodes[replace.get(k, k)] = nodes.pop(k);
+
+	if debug == 1:
+		print("NEW NODES:", nodes);
 
 	# if debug == 1:
 	# 	print new_tree;

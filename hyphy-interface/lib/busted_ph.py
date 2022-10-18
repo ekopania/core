@@ -150,12 +150,16 @@ def generate(indir, tree_input, gt_opt, aln_id_delim, targets, references, hyphy
         new_seqfile = os.path.join(cur_outdir, "busted-ph.fa");
         with open(new_seqfile, "w") as seqfile:
             for title in seq_dict:
-                tip_name = str(title).split(">")[1]
+                tip_name = str(title).split(">")[1];
                 #print(tip_name)
                 split_tree = re.split(' |\(|\)|,', cur_tree)
                 #print(split_tree)
                 if tip_name in split_tree:
                     #print("Writing to output alignment fasta")
+                    seqfile.write(title + "\n");
+                    seqfile.write(seq_dict[title] + "\n");
+                #Make sure to also add sequences for tips that got a label appended
+                if tip_name + "{TEST}" in split_tree or tip_name + "{REFERENCE}" in split_tree:
                     seqfile.write(title + "\n");
                     seqfile.write(seq_dict[title] + "\n");
         # Write the sequences for this alignment

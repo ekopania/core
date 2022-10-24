@@ -43,10 +43,22 @@ if args.model in ["m2", "cmc", "bs", "bs_null"]:
     if not args.target_clade:
         sys.exit(" * Error 3: With models m2, bs, bs_null, and cmc a -targetclade must be given.");
 
-    with open(args.target_clade, "r") as target_file:
-        myread=csv.reader(target_file, skipinitialspace=True)
-        for row in myread:
-            targets=set(row)
+    tests = [];
+    with open(args.target_clade, 'r') as f:
+        lines = f.readlines();
+    for line in lines:
+        tests.append(line.replace("\n", "").replace(", ", ",").split(","));
+    #tests = list(set(tests));
+    if(len(tests) > 1):
+        sys.exit( " * Error: Foreground must be input as a text file with foreground species on ONE LINE, separated by commas.");
+    tests = tests[0];
+    tests.sort();
+else:
+    tests = False;
+    #with open(args.target_clade, "r") as target_file:
+    #    myread=csv.reader(target_file, skipinitialspace=True)
+    #    for row in myread:
+    #        targets=set(row)
     # Parse targets from csv file
     #targets = args.target_clade.replace(", ", ",").split(",");
     #targets = set(targets);
@@ -132,7 +144,7 @@ with open(output_file, "w") as outfile:
     elif args.genetrees:
         pcore.PWS(pcore.spacedOut("# Using gene trees:", pad) + tree_input, outfile);
     if args.model in ["m2", "cmc", "bs", "bs_null"]:
-        pcore.PWS(pcore.spacedOut("# Target clade:", pad) + ",".join(targets), outfile);
+        pcore.PWS(pcore.spacedOut("# Target clade:", pad) + ",".join(tests), outfile);
     if args.anc_recon:
         pcore.PWS(pcore.spacedOut("# Performing ancestral sequence reconstruction.", pad), outfile);
     pcore.PWS("# ----------------", outfile);
@@ -178,10 +190,10 @@ with open(output_file, "w") as outfile:
 
     if args.model == "bs":
         import lib.bs as bs;
-        bs.generate(args.input, tree_input, args.genetrees, targets, args.path, args.output, outfile);
+        bs.generate(args.input, tree_input, args.genetrees, tests, args.path, args.output, outfile);
     if args.model == "bs_null":
         import lib.bs_null as bs_null;
-        bs_null.generate(args.input, tree_input, args.genetrees, targets, args.path, args.output, outfile);
+        bs_null.generate(args.input, tree_input, args.genetrees, tests, args.path, args.output, outfile);
 
 ##########################
 # Generating the submit script.

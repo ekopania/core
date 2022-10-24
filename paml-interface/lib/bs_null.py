@@ -77,8 +77,8 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
     for aln in aligns:
         if gt_opt:
             #tree_file = os.path.join(tree_input, aln, aln + "-rooted.treefile");
-            #tree_file = os.path.join(tree_input, aln, aln + ".treefile");
-            tree_file = os.path.join(tree_input,aln + ".pared.treefile");
+            tree_file = os.path.join(tree_input, aln, aln + ".treefile");
+            #tree_file = os.path.join(tree_input,aln + ".pared.treefile");
         else:
             tree_file = tree_input;
 
@@ -97,7 +97,12 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
             continue;
         # Check the tree file.          
 
+        #g_tree = open(aligns[aln]['tree'], "r").read().strip();
+        #g_tree = re.sub("\)[\de.-]+:", "):", g_tree);
+        # Read in the tree from treefile.
+
         target_found, cur_tree = assignTargetClade(aligns[aln]['tree'], targets);
+        #target_found, cur_tree = assignTargetClade(g_tree, targets);
         if not target_found:
             outfile.write(" # Target clade not found. Skipping: " + aligns[aln]['aln-file'] + "\n");
             target_skipped += 1;
@@ -137,6 +142,9 @@ def generate(indir, tree_input, gt_opt, targets, paml_path, outdir, outfile):
                 tip_name = str(title).split(">")[1]
                 split_tree = re.split(' |\(|\)|,', cur_tree)
                 if tip_name in split_tree:
+                    seqfile.write(title + "\n");
+                    seqfile.write(seq_dict[title] + "\n");
+                if tip_name + " #1" in split_tree:
                     seqfile.write(title + "\n");
                     seqfile.write(seq_dict[title] + "\n");
         # Write the sequences for this alignment

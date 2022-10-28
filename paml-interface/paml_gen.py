@@ -10,7 +10,7 @@ import sys, os, re, argparse, csv, lib.pamlcore as pcore
 
 parser = argparse.ArgumentParser(description="codeml command generator");
 parser.add_argument("-i", dest="input", help="Directory of input FASTA alignments .", default=False);
-parser.add_argument("-m", dest="model", help="The PAML model that was used to generate the files in -i. Options: m1, m1a, m2, m2a, m7m8, m8, m8a, cmc, bs, bs_null. Default: m1", default="m1");
+parser.add_argument("-m", dest="model", help="The PAML model that was used to generate the files in -i. Options: m0, m1, m1a, m2, m2a, m7m8, m8, m8a, cmc, bs, bs_null. Default: m1", default="m1");
 parser.add_argument("-o", dest="output", help="Desired output directory for aligned files. Job name (-n) will be appended to output directory name.", default=False);
 parser.add_argument("-n", dest="name", help="A short name for all files associated with this job.", default=False);
 parser.add_argument("-p", dest="path", help="The path to codeml. Default: codeml", default="codeml");
@@ -36,8 +36,8 @@ if not args.input or not os.path.isdir(args.input):
     sys.exit( " * Error 1: An input directory must be defined with -i.");
 args.input = os.path.abspath(args.input);
 
-if args.model not in ["m1", "m1a", "m2", "m2a", "m7m8", "m8", "m8a", "cmc", "bs", "bs_null"]:
-    sys.exit(" * Error 2: Model (-m) must be one of: m1, m1a, m2, m2a, m7m8, m8, m8a, cmc, bs, bs_null");
+if args.model not in ["m0", "m1", "m1a", "m2", "m2a", "m7m8", "m8", "m8a", "cmc", "bs", "bs_null"]:
+    sys.exit(" * Error 2: Model (-m) must be one of: m0, m1, m1a, m2, m2a, m7m8, m8, m8a, cmc, bs, bs_null");
 
 if args.model in ["m2", "cmc", "bs", "bs_null"]:
     if not args.target_clade:
@@ -161,6 +161,9 @@ with open(output_file, "w") as outfile:
 ##########################
 # Generating the commands in the job file.
 
+    if args.model == "m0":
+        import lib.m0 as m0;
+        m0.generate(args.input, tree_input, args.genetrees, args.path, args.output, outfile);
     if args.model == "m1":
         import lib.m1 as m1;
         m1.generate(args.input, tree_input, args.genetrees, anc_recon_setting, args.path, args.output, outfile);

@@ -13,7 +13,7 @@ treefile = {treefile}
 outfile = {outfile}
 
 model = 0
-NSsites = 1
+NSsites = 0
 
 seqtype = 1
 CodonFreq = 2
@@ -96,12 +96,16 @@ def generate(indir, tree_input, gt_opt, paml_path, outdir, outfile):
         new_seqfile = os.path.join(cur_outdir, "codeml.fa");
         with open(new_seqfile, "w") as seqfile:
             for title in seq_dict:
-                tip_name = str(title).split(">")[1];
-                split_tree = re.split(' |\(|\)|,|:', aligns[aln]['tree']);
+                tip_name = str(title).split(">")[1]
+                split_tree = re.split(' |\(|\)|,|:', aligns[aln]['tree'])
+                #print(tip_name)
+                #print(split_tree)
+                #Only write sequences for species included in tree
                 if tip_name in split_tree:
                     seqfile.write(title + "\n");
                     seqfile.write(seq_dict[title] + "\n");
-        # Write the sequences for this alignment; only include sequences present in the tree
+        # Write the sequences for this alignment
+
 
         cur_ctlfile = os.path.join(cur_outdir, "codeml.ctl");
         cur_outfile = os.path.join(cur_outdir, "codeml.out");

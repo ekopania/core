@@ -57,10 +57,12 @@ def getClade(c_spec, c_treedict):
 def remBranchLength(treestring):
 # Removes branch lengths from a tree.
 
-	#treestring = re.sub('[)][\d\w<>/.eE_:-]+', ')', treestring);
-	#treestring = re.sub(':[\d.eE-]+', '', treestring);
-	treestring = re.sub('[)][\d\w.:]+', ')', treestring);
-	treestring = re.sub(':[\d.]+', '', treestring);
+	#For most programs
+	treestring = re.sub('[)][\d\w<>/.eE_:-]+', ')', treestring);
+	treestring = re.sub(':[\d.eE-]+', '', treestring);
+	#For busted-ph
+	#treestring = re.sub('[)][\d\w.:]+', ')', treestring);
+	#treestring = re.sub(':[\d.]+', '', treestring);
 	#treestring = re.sub('[)][_\d\w<>.eE-]+:[\d.eE-]+', ')', treestring);
 	#treestring = re.sub(':[\d.eE-]+', '', treestring);
 	#treestring = re.sub('<[\d\w]+>[\d_]+', '', treestring);
@@ -144,7 +146,7 @@ def treeParse(tree, debug=0):
 
 	replace = {};
 	for node in nodes:
-		print("#BEFORE APPEND: " + node);
+		#print("#BEFORE APPEND: " + node);
 		if node + node in new_tree:
 			new_tree = new_tree.replace(node + node, node);
 		if node + "{TEST}" in new_tree:

@@ -25,6 +25,8 @@ parser.add_argument("-targetclades", dest="target_clades", help="A file or direc
 #parser.add_argument("-target", dest="target", help="A single or pair of species. The MRCA of the given species will be determined as the target lineage. Pairs should be separated by semi-colons and multiple targets separated by commas, e.g. 'targ1s1;targ1s2,targ2s1;targ2s2", default=False);
 parser.add_argument("-tb", dest="testbranches", help="A comma delimited list of species or branches that make up the test branches for RELAX and BUSTED-PH.", default=False);
 parser.add_argument("-rb", dest="refbranches", help="A comma delimited list of species or branches that make up the reference branches for RELAX and BUSTED-PH.", default=False);
+parse.add_argument("-srv", dest="srv", help="A boolean indicating whether or not to include synonymous rate variation in the model.", default=True);
+parse.add_argument("-mns", dest="mns", help="A string to input into HyPhy's '--multiple-hits' option.", default="Double+Triple");
 # Program options
 
 parser.add_argument("-part", dest="part", help="SLURM partition option.", default=False);
@@ -120,14 +122,14 @@ if args.model != "anc-recon":
 if args.model == "relax":
     if not tests:
         sys.exit(" * Error 10: If running RELAX, -tb must be provided.");
-    if not refs:
-        sys.exit(" * Error 11: If running RELAX, -rb must be provided.");
+    #if not refs:
+     #   sys.exit(" * Error 11: If running RELAX, -rb must be provided.");
 
 if args.model == "busted-ph":
     if not tests:
         sys.exit(" * Error 10: If running BUSTED-PH, -tb must be provided.");
-    if not refs:
-        sys.exit(" * Error 11: If running BUSTED-PH, -rb must be provided.");
+    #if not refs:
+     #   sys.exit(" * Error 11: If running BUSTED-PH, -rb must be provided.");
 
 # error checking
 
@@ -216,7 +218,8 @@ with open(output_file, "w") as outfile:
     file_dir = os.path.dirname(os.path.abspath(__file__));
     if args.model == "mg94":
         import lib.mg94 as mg94; 
-        model_file = os.path.join(file_dir, "hyphy-analyses/FitMG94/FitMG94.bf");
+        #model_file = os.path.join(file_dir, "hyphy-analyses/FitMG94/FitMG94.bf");
+        model_file = "/ihome/nclark/emk270/software/hyphy-analyses/FitMG94/FitMG94.bf";
         mg94.generate(args.input, tree_input, model_file, args.genetrees, args.sep, args.path, args.output, logdir, outfile);
     if args.model == "mg94-local":   
         import lib.mg94local as mg94local;
@@ -232,7 +235,7 @@ with open(output_file, "w") as outfile:
         fel.generate(args.input, tree_input, args.genetrees, args.sep, args.path, args.output, logdir, outfile);
     if args.model == "busted":
         import lib.busted as busted;
-        busted.generate(args.input, tree_input, args.genetrees, args.sep, args.path, args.output, logdir, outfile);
+        busted.generate(args.input, tree_input, args.genetrees, args.sep, args.path, args.output, logdir, outfile, args.srv, args.mns);
     if args.model == "fubar":
         import lib.fubar as fubar;
         fubar.generate(args.input, tree_input, args.genetrees, args.sep, args.path, args.output, logdir, outfile);
@@ -248,7 +251,7 @@ with open(output_file, "w") as outfile:
         slac.generate(args.input, tree_input, args.genetrees, args.path, args.output, logdir, outfile);
     if args.model == "relax":
         import lib.relax as relax;
-        relax.generate(args.input, tree_input, tests, refs, args.genetrees, args.path, args.output, logdir, outfile);
+        relax.generate(args.input, tree_input, args.genetrees, tests, refs, args.path, args.output, logdir, outfile);
     if args.model == "busted-ph":
         import lib.busted_ph as busted_ph;
         busted_ph.generate(args.input, tree_input, args.genetrees, args.sep, tests, refs, args.path, args.output, logdir, outfile);

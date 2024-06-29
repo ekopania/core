@@ -111,15 +111,19 @@ def generate(indir, tree_input, gt_opt, aln_id_delim, targets, references, hyphy
             continue;
         # Assign the target lineages to the current tree.
 
-        print("#TREE WITH TEST BRANCHES LABELED:")
-        print(targ_tree);
-        print("#END LABELED TEST TREE:")
+        #print("#TREE WITH TEST BRANCHES LABELED:")
+        #print(targ_tree);
+        #print("#END LABELED TEST TREE:")
 
-        ref_found, cur_tree = assignReferenceClade(targ_tree, references);
-        if not ref_found:
-            outfile.write(" # Reference clade not found. Skipping: " + aligns[aln]['aln-file'] + "\n");
-            reference_skipped += 1;
-            continue;
+	if not references:
+            print("Using unlabeled branches as reference branches");
+            cur_tree = targ_tree
+        else:
+            ref_found, cur_tree = assignReferenceClade(targ_tree, references);
+            if not ref_found:
+                outfile.write(" # Reference clade not found. Skipping: " + aligns[aln]['aln-file'] + "\n");
+                reference_skipped += 1;
+                continue;
         # Assign the reference lineages to the current tree.
 
         seq_dict = hpseq.fastaGetDict(aligns[aln]['aln-file']);
@@ -169,7 +173,14 @@ def generate(indir, tree_input, gt_opt, aln_id_delim, targets, references, hyphy
         cur_logfile = os.path.join(logdir, aln + ".log");
         # Get the output json and log file names
 
-        hyphy_cmd = "hyphy " + hyphy_path + "BUSTED-PH/BUSTED-PH.bf --alignment " + new_seqfile + " --tree " +  new_treefile + " --srv No --branches TEST --comparison REFERENCE --output " + cur_jsonfile + " &> " + cur_logfile 
+	#hyphy_cmd = "hyphy relax --alignment " + aligns[aln]['aln-file'] + " --tree " +  aligns[aln]['tree'] + " --test " + testbranch_file + " --reference " + refbranch_file + " --output " + cur_jsonfile + " &> " + cur_logfile
+        #--kill-zero-lengths No makes it so that HyPhy does NOT remove branches estimated to have length 0; may make things slower but should not affect likelihood estimates: https://github.com/veg/hyphy/issues/1663
+        #--srv Yes accounts for synonymous rate variation
+        #--multiple-hits Double+Triple accounts for double and triple multiple nucleotide mutations
+	if not references:
+            hyphy_cmd = hyphy_path + " CPU=1 /ihome/nclark/emk270/software/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment " + new_seqfile + " --tree " + new_treefile + " --branches TEST --kill-zero-lengths Yes --srv Yes --multiple-hits Double+Triple --output " + cur_jsonfile + " &> " + cur_logfile
+	else:
+	    hyphy_cmd = hyphy_path + " CPU=1 /ihome/nclark/emk270/software/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment " + new_seqfile + " --tree " +  new_treefile + " --branches TEST --comparison REFERENCE --kill-zero-lengths Yes --srv Yes --multiple-hits Double+Triple --output " + cur_jsonfile + " &> " + cur_logfile 
         outfile.write(hyphy_cmd + "\n");
         # Construct and write the hyphy command
 

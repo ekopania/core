@@ -8,7 +8,7 @@ from collections import defaultdict
 
 ############################################################
 
-def generate(indir, tree_input, gt_opt, aln_id_delim, hyphy_path, outdir, logdir, outfile):
+def generate(indir, tree_input, gt_opt, aln_id_delim, hyphy_path, outdir, logdir, outfile, srv, mns):
     if aln_id_delim:
         aligns = { os.path.splitext(f)[0] : { "aln-file" : os.path.join(indir, f), "id" : f.split(aln_id_delim)[0], "tree" : False } for f in os.listdir(indir) if f.endswith(".fa") };
     else:
@@ -58,6 +58,33 @@ def generate(indir, tree_input, gt_opt, aln_id_delim, hyphy_path, outdir, logdir
             continue;
         # Check the alignment for premature stop codons (which PAML hangs on)
 
+	cur_outdir = os.path.join(outdir, aln);
+        if not os.path.isdir(cur_outdir):
+            os.system("mkdir " + cur_outdir);
+        # Make the output directory for this alignment
+
+        cur_tree = open(aligns[aln]['tree'], "r").read().strip();
+        cur_tree = re.sub("\)[\de.-]+:", "):", cur_tree);
+        # Read in the tree from treefile.
+
+	new_treefile = os.path.join(cur_outdir, "busted.tre");
+        with open(new_treefile, "w") as treefile:
+            treefile.write(cur_tree);
+        # Make the tree file for this alignment
+
+        new_seqfile = os.path.join(cur_outdir, "busted.fa");
+        with open(new_seqfile, "w") as seqfile:
+            for title in seq_dict:
+                tip_name = str(title).split(">")[1];
+                #print(tip_name)
+                split_tree = re.split(' |\(|\)|,', cur_tree)
+                #print(split_tree)
+                if tip_name in split_tree:
+                    #print("Writing to output alignment fasta")
+                    seqfile.write(title + "\n");
+                    seqfile.write(seq_dict[title] + "\n");
+        # Write the sequences for this alignment
+
         # cur_outdir = os.path.join(outdir, aln);
         # if not os.path.isdir(cur_outdir):
         #     os.system("mkdir " + cur_outdir);
@@ -67,8 +94,18 @@ def generate(indir, tree_input, gt_opt, aln_id_delim, hyphy_path, outdir, logdir
         #cur_outfile = os.path.join(cur_outdir, align + "-out.txt");
         cur_logfile = os.path.join(logdir, aln + ".log");
         # Get the control and output file names
+	
+	if srv:
+            srv_opt = "Yes"
+        else:
+            srv_opt = "No"
+        #Get the synonymous rate variation option for hyphy command
 
-        hyphy_cmd = "hyphy busted --alignment " + aligns[aln]['aln-file'] + " --tree " +  aligns[aln]['tree'] + " --output " + cur_jsonfile + " &> " + cur_logfile 
+        #--kill-zero-lengths No makes it so that HyPhy does NOT remove branches estimated to have length 0; may make things slower but should not affect likelihood estimates: https://github.com/veg/hyphy/issues/1663
+        #--srv Yes accounts for synonymous rate variation
+        #--multiple-hits Double+Triple accounts for double and triple multiple nucleotide mutations
+        hyphy_cmd = hyphy_path + " CPU=1 busted --alignment " + new_seqfile + " --tree " + new_treefile + " --kill-zero-lengths Yes --srv " + srv_opt + " --multiple-hits " + mns + " --output " + cur_jsonfile + " &> " + cur_logfile
+        #hyphy_cmd = hyphy_path + " CPU=1 busted --alignment " + new_seqfile + " --tree " + new_treefile + " --kill-zero-lengths Yes --srv No --multiple-hits None --output " + cur_jsonfile + " &> " + cur_logfile
         outfile.write(hyphy_cmd + "\n");
         # Construct and write the hyphy command
 
@@ -77,12 +114,14 @@ def generate(indir, tree_input, gt_opt, aln_id_delim, hyphy_path, outdir, logdir
 
 ############################################################
 
-def parse(indir, features, outfile, pad):
+def parse(indir, features, fg_branches, outfile, pad):
 
     if features:
-        headers = ["file","id","chr","start","end","lrt","pval"];
+        headers = ["file","id","chr","start","end","mnm2","mnm3","dn/ds","lrt","pval"];
+    elif fg_branches:
+        headers = ["file","branch","mnm2","mnm3","dn/ds","lrt","pval"];
     else:
-        headers = ["file","branch","lrt","pval"];
+        headers = ["file","mnm2","mnm3","dn/ds","lrt","pval"];
     outfile.write(",".join(headers) + "\n");
     # Write the output headers 
 
@@ -132,12 +171,14 @@ def parse(indir, features, outfile, pad):
 
         if features:
             gene_info = { 'id' : fid, 'chr' : cur_feature['chrome'], 'start' : cur_feature['start'], 'end' : cur_feature['end'],
-                "lrt" : "NA", "pval" : "NA" };
+                "mnm2" : "NA", "mnm3" : "NA", "dn/ds" : "NA", "lrt" : "NA", "pval" : "NA" };
         else:
-            gene_info = { "lrt" : "NA", "pval" : "NA" };   
+            gene_info = { "mnm2" : "NA", "mnm3" : "NA", "dn/ds" : "NA", "lrt" : "NA", "pval" : "NA" };   
         # Initialize the output dictionary for the current branch.
 
-        #gene_info["dn/ds"] = str(cur_data["fits"]["Standard MG94"]["Rate Distributions"]["non-synonymous/synonymous rate ratio"]);
+        #gene_info["mnm2"] = str(cur_data["fits"]["Unconstrained model"]["Rate Distributions"]["rate at which 2 nucleotides are changed instantly within a single codon"]);
+        #gene_info["mnm3"] = str(cur_data["fits"]["Unconstrained model"]["Rate Distributions"]["rate at which 3 nucleotides are changed instantly within a single codon"]);
+	gene_info["dn/ds"] = str(cur_data["fits"]["MG94xREV with separate rates for branch sets"]["Rate Distributions"]["non-synonymous/synonymous rate ratio for *test*"][0][0]);
         gene_info["lrt"] = str(cur_data["test results"]["LRT"]);
         gene_info["pval"] = str(cur_data["test results"]["p-value"]);
         # Retrieve the rate estimates from the json data.

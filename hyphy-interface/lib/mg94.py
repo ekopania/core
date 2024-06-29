@@ -8,8 +8,8 @@ from collections import defaultdict
 
 ############################################################
 
-def generate(indir, tree_input, gt_opt, aln_id_delim, hyphy_path, outdir, logdir, outfile):
-    model_file = os.path.abspath("hyphy-analyses/FitMG94/FitMG94.bf");
+def generate(indir, tree_input, model_file, gt_opt, aln_id_delim, hyphy_path, outdir, logdir, outfile):
+    #model_file = os.path.abspath("hyphy-analyses/FitMG94/FitMG94.bf");
 
     if aln_id_delim:
         aligns = { os.path.splitext(f)[0] : { "aln-file" : os.path.join(indir, f), "id" : f.split(aln_id_delim)[0], "tree" : False } for f in os.listdir(indir) if f.endswith(".fa") };

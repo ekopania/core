@@ -10,8 +10,9 @@ import sys, os, argparse, lib.hpcore as hpcore
 
 parser = argparse.ArgumentParser(description="Parse Hyphy json output");
 parser.add_argument("-i", dest="input", help="Directory containing hyphy json output files.", default=False);
-parser.add_argument("-m", dest="model", help="The Hyphy model that was used to generate the files in -i. Default: mg94, mg94-local, busted, fubar, absrel, slac", default="mg94");
+parser.add_argument("-m", dest="model", help="The Hyphy model that was used to generate the files in -i. Default: mg94. Other options: mg94-local, busted, fubar, absrel, slac, relax", default="mg94");
 parser.add_argument("-d", dest="meta", help="A file containing metadata. Tab delimited with columns: id, feature type, chromosome, start coord, end coord, strand. Directories in -i must be formatted <id>-*", default=False);
+parser.add_argument("-b", dest="fg_branches", help="Boolean indicating if busted was run with foreground branches specified or not.", default=False)
 parser.add_argument("-o", dest="output", help="An output .csv file.", default=False);
 parser.add_argument("--overwrite", dest="overwrite", help="If the output file already exists and you wish to overwrite it, set this option.", action="store_true", default=False);
 # IO options
@@ -20,8 +21,8 @@ args = parser.parse_args();
 if not args.input or not os.path.isdir(args.input):
     sys.exit(" * Error 1: Please provide a valid input directory (-i).");
 
-if args.model not in ["mg94", "mg94-local", "busted", "fubar", "absrel", "slac"]:
-    sys.exit(" * Error 2: Model (-m) must be one of: mg94, mg94-local, busted, fubar, absrel, slac");
+if args.model not in ["mg94", "mg94-local", "busted", "fubar", "absrel", "slac", "relax"]:
+    sys.exit(" * Error 2: Model (-m) must be one of: mg94, mg94-local, busted, fubar, absrel, slac, relax");
 
 if args.meta and not os.path.isfile(args.meta):
     sys.exit(" * Error 3: Cannot find meta data file: " + args.meta);
@@ -42,7 +43,7 @@ if args.model in site_models:
 pad = 25;
 
 with open(args.output, "w") as outfile:
-    hpcore.runTime("# HYPHY SLAC output parser", outfile);
+    hpcore.runTime("# HYPHY output parser", outfile);
     hpcore.PWS("# IO OPTIONS", outfile);
     hpcore.PWS(hpcore.spacedOut("# Input directory:", pad) + args.input, outfile);
     hpcore.PWS(hpcore.spacedOut("# Hyphy model:", pad) + args.model, outfile);
@@ -74,7 +75,7 @@ with open(args.output, "w") as outfile:
 
     if args.model == "busted":
         import lib.busted as busted;
-        busted.parse(args.input, features, outfile, pad);
+        busted.parse(args.input, features, args.fg_branches, outfile, pad);
 
     if args.model == "fubar":
         import lib.fubar as fubar;
@@ -90,5 +91,6 @@ with open(args.output, "w") as outfile:
 
     if args.model == "relax":
         import lib.relax as relax;
-        relax.parse(args.input, features, outfile, pad);
+        #relax.parse(args.input, features, outfile, pad);
+        relax.parse(args.input, outfile, pad);
     # Load the library for the model used and pass everything to it.

@@ -150,11 +150,11 @@ def treeParse(tree, debug=0):
 		if node + node in new_tree:
 			new_tree = new_tree.replace(node + node, node);
 		if node + "{TEST}" in new_tree:
-			print("Adding TEST");
+			#print("Adding TEST");
 			#nodes[node + "{TEST}"] = nodes.pop(node);
 			replace[node] = node + "{TEST}";
 		if node + "{REFERENCE}" in new_tree:
-			print("Adding REF");
+			#print("Adding REF");
 			#nodes[node + "{REFERENCE}"] = nodes.pop(node);
 			replace[node] = node + "{REFERENCE}";
 	if debug == 1:

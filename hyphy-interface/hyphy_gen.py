@@ -25,8 +25,8 @@ parser.add_argument("-targetclades", dest="target_clades", help="A file or direc
 #parser.add_argument("-target", dest="target", help="A single or pair of species. The MRCA of the given species will be determined as the target lineage. Pairs should be separated by semi-colons and multiple targets separated by commas, e.g. 'targ1s1;targ1s2,targ2s1;targ2s2", default=False);
 parser.add_argument("-tb", dest="testbranches", help="A comma delimited list of species or branches that make up the test branches for RELAX and BUSTED-PH.", default=False);
 parser.add_argument("-rb", dest="refbranches", help="A comma delimited list of species or branches that make up the reference branches for RELAX and BUSTED-PH.", default=False);
-parse.add_argument("-srv", dest="srv", help="A boolean indicating whether or not to include synonymous rate variation in the model.", default=True);
-parse.add_argument("-mns", dest="mns", help="A string to input into HyPhy's '--multiple-hits' option.", default="Double+Triple");
+parser.add_argument("-srv", dest="srv", help="A boolean indicating whether or not to include synonymous rate variation in the model.", default=True);
+parser.add_argument("-mns", dest="mns", help="A string to input into HyPhy's '--multiple-hits' option.", default="Double+Triple");
 # Program options
 
 parser.add_argument("-part", dest="part", help="SLURM partition option.", default=False);
